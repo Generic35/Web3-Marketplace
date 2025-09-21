@@ -1,6 +1,38 @@
+import { useEffect } from 'react'
 import { ethers } from 'ethers'
 
 const Navigation = ({ account, setAccount }) => {
+    // Check for existing connection and listen for account changes
+    useEffect(() => {
+        const checkAndListenForAccount = async () => {
+            if (window.ethereum) {
+                // Check existing connection
+                const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+                if (accounts.length > 0) {
+                    setAccount(ethers.utils.getAddress(accounts[0]));
+                }
+                
+                // Listen for account changes
+                window.ethereum.on('accountsChanged', (accounts) => {
+                    if (accounts.length > 0) {
+                        setAccount(ethers.utils.getAddress(accounts[0]));
+                    } else {
+                        setAccount(null);
+                    }
+                });
+            }
+        }
+        
+        checkAndListenForAccount();
+        
+        // Cleanup listener
+        return () => {
+            if (window.ethereum) {
+                window.ethereum.removeAllListeners('accountsChanged');
+            }
+        }
+    }, [setAccount])
+
     const connectHandler = async () => {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         const account = ethers.utils.getAddress(accounts[0])
